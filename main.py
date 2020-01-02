@@ -49,10 +49,10 @@ def get_company_detail(url):
     row = []
     row.append(re.search('\d+', url).group()) #コード
     row.append(soup.find('a', id='company_name0').get_text()) #企業名
-    row.append(re.search('.*円', soup.find('tbody').find_all('tr')[1].find_all('td')[0].get_text()).group()) #売上高
-    row.append(re.search('.*円', soup.find('tbody').find_all('tr')[1].find_all('td')[1].get_text()).group()) #純利益
-    row.append(re.search('.*円', soup.find('tbody').find_all('tr')[1].find_all('td')[2].get_text()).group()) #営業CF
-    row.append(re.search('.*円', soup.find('tbody').find_all('tr')[1].find_all('td')[3].get_text()).group()) #総資産
+    row.append(trim_indicator(soup, 0)) #売上高
+    row.append(trim_indicator(soup, 1)) #純利益
+    row.append(trim_indicator(soup, 2)) #営業CF
+    row.append(trim_indicator(soup, 3)) #総資産
     row.append(soup.find('table', class_='company_outline').tbody.find_all('tr')[2].td.get_text()) #従業員数（単独）
     row.append(soup.find('table', class_='company_outline').tbody.find_all('tr')[3].td.get_text()) #従業員数（連結）
     row.append(soup.find('table', class_='company_outline').tbody.find_all('tr')[4].td.get_text()) #平均年齢（単独）
@@ -60,6 +60,15 @@ def get_company_detail(url):
     row.append(soup.find('table', class_='company_outline').tbody.find_all('tr')[7].td.get_text()) #業種
 
     return row
+
+
+def trim_indicator(soup, index):
+    i = soup.find('tbody').find_all('tr')[1].find_all('td')[index].get_text()
+    r = re.search('.*円', i)
+    if r != None:
+        return r.group()
+    else:
+        return ""
 
 
 def write_csv(rows):
