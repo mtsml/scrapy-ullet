@@ -4,47 +4,35 @@ import re
 import requests
 import time
 from bs4 import BeautifulSoup
-import chromedriver_binary
-from selenium import webdriver
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 
 
 ULLET_TOP_URL = 'http://www.ullet.com'
-ULLET_SEARCH_URL = 'http://www.ullet.com/search.html#page/'
-WEBDRIVER_TIME_OUT = 30
+ULLET_SEARCH_URL = 'http://www.ullet.com/search.html'
+ULLET_PAGE_URL = 'http://www.ullet.com/search/page/%d.html'
 REQUEST_WAIT_TIME = 1
 
 
 def scrapy_ullet():
     rows = []
 
-    driver = webdriver.Chrome()
-    driver.get(ULLET_SEARCH_URL)
+    # 総ページ数の取得
+    res = requests.get(ULLET_SEARCH_URL)
+    soup = BeautifulSoup(res.text, 'html.parser')
+    li_all = soup.find('ul', class_='mg_menu_tab mg_menu_tab_top_reverse').find_all('li')
+    max_page_txt = li_all[len(li_all)-1].span.a.get_text()
+    max_page_num = int(re.search('\d+', max_page_txt).group())
 
-    try:
-        # ページ総数を取得する
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        li_all = soup.find('ul', class_='mg_menu_tab mg_menu_tab_top_reverse').find_all('li')
-        max_page_txt = li_all[len(li_all)-1].span.a.get_text()
-        max_page_num = int(re.search('\d+', max_page_txt).group())
+    for i in range(1, max_page_num+1):
+        read_page(i, rows)
 
-        # for i in range(1, max_page_num+1):
-        # page_btn = driver.find_element_by_link_text('P.'+str(max_page_num))
-        # page_btn.click()
-        print(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), 'page%d' % max_page_num)
-        driver.get(ULLET_SEARCH_URL+str(max_page_num))
-        read_page(driver.page_source, rows)
-
-    except Exception as e:
-        print(e)
-    finally:
-        driver.quit()
-        write_csv(rows)
+    write_csv(rows)
 
 
-def read_page(html, rows):
-    soup = BeautifulSoup(html, 'html.parser')
+def read_page(page, rows):
+    print(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), 'page%d'%page)
+    
+    res = requests.get(ULLET_PAGE_URL%page)
+    soup = BeautifulSoup(res.text, 'html.parser')
     a_all = soup.find('div', id='ranking').find_all('a', class_='company_name')
 
     for a in a_all:
@@ -52,8 +40,8 @@ def read_page(html, rows):
 
 
 def get_company_detail(url):
-    req = requests.get(url)
-    soup = BeautifulSoup(req.text, 'html.parser')
+    res = requests.get(url)
+    soup = BeautifulSoup(res.text, 'html.parser')
 
     # サーバー負荷軽減のため一定時間待機する
     time.sleep(REQUEST_WAIT_TIME)
@@ -76,7 +64,7 @@ def get_company_detail(url):
 
 def write_csv(rows):
     with open("ullet.csv", "w", encoding='utf-8') as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, delimiter=",", quotechar='"', quoting=csv.QUOTE_ALL)
         for row in rows:
             writer.writerow(row)
 
