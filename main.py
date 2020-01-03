@@ -6,9 +6,9 @@ import time
 from bs4 import BeautifulSoup
 
 
-ULLET_TOP_URL = 'http://www.ullet.com'
-ULLET_SEARCH_URL = 'http://www.ullet.com/search.html'
-ULLET_PAGE_URL = 'http://www.ullet.com/search/page/%d.html'
+URL_ULLET_TOP = 'http://www.ullet.com'
+URL_ULLET_SEARCH = 'http://www.ullet.com/search.html'
+URL_ULLET_PAGE = 'http://www.ullet.com/search/page/%d.html'
 REQUEST_WAIT_TIME = 1
 
 
@@ -16,7 +16,7 @@ def scrapy_ullet():
     rows = []
 
     # 総ページ数の取得
-    res = requests.get(ULLET_SEARCH_URL)
+    res = requests.get(URL_ULLET_SEARCH)
     soup = BeautifulSoup(res.text, 'html.parser')
     li_all = soup.find('ul', class_='mg_menu_tab mg_menu_tab_top_reverse').find_all('li')
     max_page_txt = li_all[len(li_all)-1].span.a.get_text()
@@ -31,12 +31,12 @@ def scrapy_ullet():
 def read_page(page, rows):
     print(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), 'page%d'%page)
     
-    res = requests.get(ULLET_PAGE_URL%page)
+    res = requests.get(URL_ULLET_PAGE%page)
     soup = BeautifulSoup(res.text, 'html.parser')
     a_all = soup.find('div', id='ranking').find_all('a', class_='company_name')
 
     for a in a_all:
-        rows.append(get_company_detail(ULLET_TOP_URL+a.get('href')))
+        rows.append(get_company_detail(URL_ULLET_TOP+a.get('href')))
 
 
 def get_company_detail(url):
