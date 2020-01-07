@@ -47,17 +47,19 @@ def get_company_detail(url):
     time.sleep(REQUEST_WAIT_TIME)
 
     row = []
+    row.append(soup.find('a', title='この証券市場のランキングを表示').get_text()) #市場
     row.append(re.search('\d+', url).group()) #コード
     row.append(soup.find('a', id='company_name0').get_text()) #企業名
     row.append(trim_indicator(soup, 0)) #売上高
     row.append(trim_indicator(soup, 1)) #純利益
     row.append(trim_indicator(soup, 2)) #営業CF
     row.append(trim_indicator(soup, 3)) #総資産
-    row.append(soup.find('table', class_='company_outline').tbody.find_all('tr')[2].td.get_text()) #従業員数（単独）
-    row.append(soup.find('table', class_='company_outline').tbody.find_all('tr')[3].td.get_text()) #従業員数（連結）
-    row.append(soup.find('table', class_='company_outline').tbody.find_all('tr')[4].td.get_text()) #平均年齢（単独）
-    row.append(soup.find('table', class_='company_outline').tbody.find_all('tr')[5].td.get_text()) #平均勤続年数（単独）
-    row.append(soup.find('table', class_='company_outline').tbody.find_all('tr')[7].td.get_text()) #業種
+    row.append(trim_address(soup)) #住所
+    row.append(trim_summary(soup, 2)) #従業員数（単独）
+    row.append(trim_summary(soup, 3)) #従業員数（連結）
+    row.append(trim_summary(soup, 4)) #平均年齢（単独）
+    row.append(trim_summary(soup, 5)) #平均勤続年数（単独）
+    row.append(trim_summary(soup, 7)) #業種
 
     return row
 
@@ -68,7 +70,18 @@ def trim_indicator(soup, index):
     if r != None:
         return r.group()
     else:
-        return ""
+        return "-"
+
+
+def trim_address(soup):
+    a = soup.find('table', class_='company_outline').tbody.find_all('tr')[1].td.get_text()
+    r = re.sub(' 周辺地図', '', a)
+    return r
+
+
+def trim_summary(soup, index):
+    s = soup.find('table', class_='company_outline').tbody.find_all('tr')[index].td.get_text()
+    return s
 
 
 def write_csv(rows):
